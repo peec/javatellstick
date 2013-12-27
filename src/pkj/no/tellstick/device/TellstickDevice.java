@@ -288,7 +288,7 @@ public class TellstickDevice implements Comparable<TellstickDevice>{
 				}
 			}
 		}
-		return devices;
+		return retDevices;
 	}
 	
 	
