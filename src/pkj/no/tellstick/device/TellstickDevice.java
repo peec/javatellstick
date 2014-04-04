@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) 2010-2014, openHAB.org and others.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package pkj.no.tellstick.device;
 
 
@@ -5,6 +13,14 @@ import java.util.ArrayList;
 
 import pkj.no.tellstick.JNA;
 
+
+
+/**
+ * Any tellstick device.
+ * 
+ * @author jarlebh
+ * @since 1.5.0
+ */
 public class TellstickDevice implements Comparable<TellstickDevice>{
 
 	/**
@@ -37,7 +53,10 @@ public class TellstickDevice implements Comparable<TellstickDevice>{
 	 */
 	protected int deviceType;
 	
-	
+	/**
+	 * Holds the last send data
+	 */
+	protected String data;
 	/**
 	 * Holds all the supported methods! Must be set with setSupportedMethods.
 	 * @see TellstickDevice.setSupportedMethods(int)
@@ -91,25 +110,27 @@ public class TellstickDevice implements Comparable<TellstickDevice>{
 		this.deviceId = deviceId;
 		
 		// Get name
-		this.name = JNA.CLibrary.INSTANCE.tdGetName(deviceId);
-		JNA.CLibrary.INSTANCE.tdReleaseString(name);
+		this.name = JNA.getPointerValue(JNA.CLibrary.INSTANCE.tdGetName(deviceId));				
+	//	JNA.CLibrary.INSTANCE.tdReleaseString(name);
 
 		// Get model
-		this.model = JNA.CLibrary.INSTANCE.tdGetModel(deviceId);
-		JNA.CLibrary.INSTANCE.tdReleaseString(model);
+		this.model = JNA.getPointerValue(JNA.CLibrary.INSTANCE.tdGetModel(deviceId));
+	//	JNA.CLibrary.INSTANCE.tdReleaseString(model);
 		
 		// Get protocol
-		this.protocol = JNA.CLibrary.INSTANCE.tdGetProtocol(deviceId);
-		JNA.CLibrary.INSTANCE.tdReleaseString(protocol);
+		this.protocol = JNA.getPointerValue(JNA.CLibrary.INSTANCE.tdGetProtocol(deviceId));
+	//	JNA.CLibrary.INSTANCE.tdReleaseString(protocol);
 		
 		// Get last status ( EMULATED 2 way communication ) Works with TS DUO
 		this.status = JNA.CLibrary.INSTANCE.tdLastSentCommand(deviceId, getSupportedMethods());
 		
+		if (this.status == JNA.CLibrary.TELLSTICK_DIM) {
+			this.data = JNA.getPointerValue(JNA.CLibrary.INSTANCE.tdLastSentValue(deviceId));
+		}
 		// Get the device type.
 		this.deviceType = JNA.CLibrary.INSTANCE.tdGetDeviceType(deviceId);
 		
 	}
-
 	
 	
 	/**
@@ -156,7 +177,7 @@ public class TellstickDevice implements Comparable<TellstickDevice>{
 	 * @return
 	 */
 	public String getParameter(String attribute, String defaultVal){
-		return JNA.CLibrary.INSTANCE.tdGetDeviceParameter(getId(), attribute, defaultVal);
+		return JNA.getPointerValue(JNA.CLibrary.INSTANCE.tdGetDeviceParameter(getId(), attribute, defaultVal));
 	}
 	
 	/**
@@ -209,6 +230,8 @@ public class TellstickDevice implements Comparable<TellstickDevice>{
 		}
 		throw new DeviceNotSupportedException("The device properties seems not to be supported by this application");
 	}
+        
+        
 	/**
 	 * Gets a list of all the devices.
 	 * Created using ArrayList.
@@ -463,6 +486,24 @@ public class TellstickDevice implements Comparable<TellstickDevice>{
 	@Override
 	public int compareTo(TellstickDevice dev) {
 		return this.getId() - dev.getId();
+	}
+
+
+	public String getData() {
+		return data;
+	}
+
+
+	public void setData(String data) {
+		this.data = data;
+	}
+
+
+	@Override
+	public String toString() {
+		return "TellstickDevice [deviceId=" + deviceId + ", name=" + name
+				+ ", status=" + status + ", deviceType=" + deviceType
+				+ ", data=" + data + "]";
 	}
 	
 	

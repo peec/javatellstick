@@ -1,10 +1,11 @@
+
 package pkj.no.tellstick;
 
 import pkj.no.tellstick.device.SupportedMethodsException;
 
-import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
 /**
@@ -26,7 +27,44 @@ import com.sun.jna.win32.StdCallLibrary.StdCallCallback;
  *
  */
 public class JNA {
-
+	public enum Method {
+		TURNON (CLibrary.TELLSTICK_TURNON), TURNOFF (CLibrary.TELLSTICK_TURNOFF),
+		DIM (CLibrary.TELLSTICK_DIM), LEARN (CLibrary.TELLSTICK_LEARN),
+		DEVICE_ADDED(CLibrary.TELLSTICK_DEVICE_ADDED),DEVICE_CHANGED(CLibrary.TELLSTICK_DEVICE_CHANGED),
+		DEVICE_REMOVED(CLibrary.TELLSTICK_DEVICE_REMOVED);
+		
+		private int nativeInt;
+		
+		Method(int nativeMethod) {this.nativeInt = nativeMethod;}
+		
+		public static Method getMethodById(int nativeId) {
+			for (Method m : Method.values()) {
+				if (m.nativeInt == nativeId) {
+					return m;
+				}
+			}
+			throw new RuntimeException("Method not found for "+nativeId);
+		}
+		
+	}
+	public enum DataType {
+		HUMIDITY (CLibrary.TELLSTICK_HUMIDITY),
+		TEMPERATURE (CLibrary.TELLSTICK_TEMPERATURE);
+		
+		private int nativeInt;
+		
+		DataType(int nativeMethod) {this.nativeInt = nativeMethod;}
+		
+		public static DataType getDataTypeId(int nativeId) {
+			for (DataType m : DataType.values()) {
+				if (m.nativeInt == nativeId) {
+					return m;
+				}
+			}
+			throw new RuntimeException("DataType not found for "+nativeId);
+		}
+		
+	}
 	public static String library = null;
 
 	
@@ -54,9 +92,14 @@ public class JNA {
 	    interface TDDeviceEvent extends StdCallCallback{
 	        void invoke(int deviceId, int method, Pointer data, int callbackId, Pointer context) throws SupportedMethodsException;        
 	    }
-	    // TELLSTICK_API int WINAPI tdRegisterDeviceEvent( TDDeviceEvent eventFunction, void *context );
-		public int tdRegisterDeviceEvent( TDDeviceEvent eventFunction, Pointer context );
+            // TELLSTICK_API int WINAPI tdRegisterDeviceEvent( TDDeviceEvent eventFunction, void *context );
+            public int tdRegisterDeviceEvent( TDDeviceEvent eventFunction, Pointer context );
 
+            interface TDSensorEvent extends StdCallCallback {
+	        void invoke(String protocol, String model, int deviceId, int dataType, Pointer value, int timeStamp, int callbackId, Pointer context) throws SupportedMethodsException;        
+	    }
+	    
+             public int tdRegisterSensorEvent( TDSensorEvent eventFunction, Pointer context );
 		// typedef void (WINAPI *TDDeviceChangeEvent)(int deviceId, int changeEvent, int changeType, int callbackId, void *context); 
 		interface TDDeviceChangeEvent extends StdCallCallback{
 	        void invoke(int deviceId, int changeEvent, int changeType, int callbackId, Pointer context) throws SupportedMethodsException;        
@@ -71,7 +114,8 @@ public class JNA {
 		// TELLSTICK_API int WINAPI tdRegisterRawDeviceEvent( TDRawDeviceEvent eventFunction, void *context );
 		public int tdRegisterRawDeviceEvent( TDRawDeviceEvent eventFunction, Pointer context );
 
-		
+			
+
 		
 		/**
 		 * 
@@ -93,7 +137,7 @@ public class JNA {
 		public void tdClose();
 
 		// TELLSTICK_API void WINAPI tdReleaseString(char *string);
-		public void tdReleaseString(String string);
+		public void tdReleaseString(Pointer string);
 
 		
 		// TELLSTICK_API int WINAPI tdTurnOn(int intDeviceId);
@@ -126,6 +170,8 @@ public class JNA {
 		// TELLSTICK_API int WINAPI tdLastSentCommand( int intDeviceId, int methodsSupported );
 		public int tdLastSentCommand( int intDeviceId, int methodsSupported );
 
+		public Pointer tdLastSentValue	(int 	intDeviceId	);
+		
 		// TELLSTICK_API int WINAPI tdGetNumberOfDevices();
 		public int tdGetNumberOfDevices();
 
@@ -136,28 +182,28 @@ public class JNA {
 		public int tdGetDeviceType(int intDeviceId);
 
 		// TELLSTICK_API char * WINAPI tdGetErrorString(int intErrorNo);
-		public String tdGetErrorString(int intErrorNo);
+		public Pointer tdGetErrorString(int intErrorNo);
 
 		// TELLSTICK_API char * WINAPI tdGetName(int intDeviceId);
-		public String tdGetName(int intDeviceId);
+		public Pointer tdGetName(int intDeviceId);
 
 		// TELLSTICK_API bool WINAPI tdSetName(int intDeviceId, const char* chNewName);
 		public boolean tdSetName(int intDeviceId, String chNewName);
 
 		// TELLSTICK_API char * WINAPI tdGetProtocol(int intDeviceId);
-		public String tdGetProtocol(int intDeviceId);
+		public Pointer tdGetProtocol(int intDeviceId);
 
 		// TELLSTICK_API bool WINAPI tdSetProtocol(int intDeviceId, const char* strProtocol);
 		public boolean tdSetProtocol(int intDeviceId, String strProtocol);
 
 		// TELLSTICK_API char * WINAPI tdGetModel(int intDeviceId);
-		public String tdGetModel(int intDeviceId);
+		public Pointer tdGetModel(int intDeviceId);
 
 		// TELLSTICK_API bool WINAPI tdSetModel(int intDeviceId, const char *intModel);
 		public boolean tdSetModel(int intDeviceId, String intModel);
 
 		// TELLSTICK_API char * WINAPI tdGetDeviceParameter(int intDeviceId, const char *strName, const char *defaultValue);
-		public String tdGetDeviceParameter(int intDeviceId, String strName, String defaultValue);
+		public Pointer tdGetDeviceParameter(int intDeviceId, String strName, String defaultValue);
 
 		// TELLSTICK_API bool WINAPI tdSetDeviceParameter(int intDeviceId, const char *strName, const char* strValue);
 		public boolean tdSetDeviceParameter(int intDeviceId, String strName, String strValue);
@@ -226,12 +272,26 @@ public class JNA {
 		// define TELLSTICK_CHANGE_METHOD			4
 		public final int TELLSTICK_CHANGE_METHOD = 4;
 
-		
+		public final int TELLSTICK_TEMPERATURE =	1;
+		public final int TELLSTICK_HUMIDITY		=2;
+		public final int  TELLSTICK_RAINRATE	=	4;
+		public final int  TELLSTICK_RAINTOTAL	=	8;
+		public final int  TELLSTICK_WINDDIRECTION=	16;
+		public final int  TELLSTICK_WINDAVERAGE=	32;
+		public final int  TELLSTICK_WINDGUST	=	64;
 	}
 
 	static{
-		JNA.library = "TelldusCore";
+		if (Platform.isWindows()) {
+			JNA.library = "TelldusCore";
+		} else {
+			JNA.library = "telldus-core";
+		}
 
 	}
-
+	public static String getPointerValue(Pointer point) {
+		String val = point.getString(0);
+		JNA.CLibrary.INSTANCE.tdReleaseString(point);
+		return val;
+	}
 }
