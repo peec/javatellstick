@@ -61,6 +61,7 @@ public class TellsticEventHandler {
 		JNA.CLibrary.INSTANCE.tdUnregisterCallback(handleDeviceEvent);
 		JNA.CLibrary.INSTANCE.tdUnregisterCallback(handleDeviceChange);
 		JNA.CLibrary.INSTANCE.tdUnregisterCallback(handleSensor);
+		changeListeners.clear();
 		sensorEventHandler = null;
 		deviceChangeHandler = null;
 		deviceEventHandler = null;
