@@ -44,7 +44,7 @@ Currently Javatellstick ships with:
 - Some more apps that are under development. 
 
 
-Comes with a test example how how to use the API! See: package pkj.no.tellstick.server;
+Comes with a test example how how to use the API! See: package org.tellstick.server;
 
 
 ### Some example code
@@ -68,8 +68,8 @@ ArrayList<TellstickDevice> devices = TellstickDevice.getDevices();
 
 ## Remember to import
 
-	import pkj.no.tellstick.JNA;
-	import pkj.no.tellstick.device.*;
+	import org.tellstick.JNA;
+	import org.tellstick.device.*;
 
 	
 ## Setting supported methods
@@ -128,7 +128,7 @@ ArrayList<TellstickDevice> devices = TellstickDevice.getDevices();
 ## Available Devices
 
 
-All devices is in the package pkj.no.tellstick.device.*;
+All devices is in the package org.tellstick.device.*;
 
 ### BellDevice
 
